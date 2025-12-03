@@ -1,6 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Prediction {
   id: string;
@@ -24,9 +23,9 @@ const RecentPredictions = ({ predictions }: RecentPredictionsProps) => {
   const formatOutcome = (outcome: string) => {
     switch (outcome) {
       case "home_win":
-        return "Hazai";
+        return "Hazai győzelem";
       case "away_win":
-        return "Vendég";
+        return "Vendég győzelem";
       case "draw":
         return "Döntetlen";
       default:
@@ -34,56 +33,148 @@ const RecentPredictions = ({ predictions }: RecentPredictionsProps) => {
     }
   };
 
-  const getStatusIcon = (wasCorrect: boolean | null) => {
-    if (wasCorrect === null) return <Clock className="h-4 w-4 text-yellow-500" />;
-    return wasCorrect ? (
-      <CheckCircle className="h-4 w-4 text-green-500" />
-    ) : (
-      <XCircle className="h-4 w-4 text-red-500" />
-    );
+  const getStatusConfig = (wasCorrect: boolean | null) => {
+    if (wasCorrect === null)
+      return {
+        icon: <Clock className="h-5 w-5" />,
+        label: "Függőben",
+        bg: "bg-amber-500/20",
+        border: "border-amber-500/30",
+        color: "text-amber-400",
+      };
+    return wasCorrect
+      ? {
+          icon: <CheckCircle className="h-5 w-5" />,
+          label: "✓ Helyes",
+          bg: "bg-emerald-500/20",
+          border: "border-emerald-500/30",
+          color: "text-emerald-400",
+        }
+      : {
+          icon: <XCircle className="h-5 w-5" />,
+          label: "✗ Hibás",
+          bg: "bg-red-500/20",
+          border: "border-red-500/30",
+          color: "text-red-400",
+        };
   };
 
   return (
-    <Card className="glass-card">
-      <CardHeader>
-        <CardTitle>Legutóbbi predikciók</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {predictions.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              Még nincsenek predikciók
+    <div className="rounded-2xl border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm overflow-hidden">
+      {/* Header */}
+      <div className="border-b border-slate-700/50 px-6 py-4">
+        <h2 className="text-xl font-bold text-white">Legutóbbi előrejelzések</h2>
+      </div>
+
+      {/* Content */}
+      <div className="divide-y divide-slate-700/50">
+        {predictions.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-slate-400 font-medium">
+              Még nincsenek előrejelzések
             </p>
-          ) : (
-            predictions.map((prediction) => (
+          </div>
+        ) : (
+          predictions.map((prediction) => {
+            const statusConfig = getStatusConfig(prediction.was_correct);
+            const confidence = Math.round(prediction.confidence_score);
+
+            return (
               <div
                 key={prediction.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border"
+                className="group p-4 hover:bg-slate-700/30 transition-all duration-300 cursor-pointer"
               >
-                <div className="flex-1">
-                  <div className="font-medium text-sm">
-                    {prediction.match.home_team} vs {prediction.match.away_team}
+                <div className="flex items-center gap-4">
+                  {/* Match Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-sm font-bold text-white truncate">
+                        {prediction.match.home_team}{" "}
+                        <span className="text-slate-500">vs</span>{" "}
+                        {prediction.match.away_team}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                      <span>{prediction.match.league}</span>
+                      <span>•</span>
+                      <span>
+                        {new Date(
+                          prediction.match.match_date
+                        ).toLocaleDateString("hu-HU")}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {prediction.match.league} •{" "}
-                    {new Date(prediction.match.match_date).toLocaleDateString("hu-HU")}
+
+                  {/* Prediction Outcome Pill */}
+                  <div className="px-3 py-1.5 rounded-full bg-slate-700/50 border border-slate-600/50 flex-shrink-0">
+                    <span className="text-xs font-medium text-slate-300">
+                      {formatOutcome(prediction.predicted_outcome)}
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary">
-                    {formatOutcome(prediction.predicted_outcome)}
-                  </Badge>
-                  <span className="text-sm font-medium">
-                    {Math.round(prediction.confidence_score)}%
-                  </span>
-                  {getStatusIcon(prediction.was_correct)}
+
+                  {/* Confidence Circular Progress */}
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                      {/* Background circle */}
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        fill="none"
+                        stroke="rgb(71, 85, 105)"
+                        strokeWidth="3"
+                        opacity="0.3"
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        fill="none"
+                        stroke={cn(
+                          confidence >= 80
+                            ? "rgb(16, 185, 129)"
+                            : confidence >= 60
+                              ? "rgb(34, 197, 94)"
+                              : "rgb(249, 115, 22)"
+                        )}
+                        strokeWidth="3"
+                        strokeDasharray={`${(confidence / 100) * 176} 176`}
+                        strokeLinecap="round"
+                        className="transition-all duration-500"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">
+                        {confidence}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border flex items-center gap-2 flex-shrink-0",
+                      statusConfig.bg,
+                      statusConfig.border,
+                      statusConfig.color
+                    )}
+                  >
+                    {statusConfig.icon}
+                    <span className="text-xs font-medium whitespace-nowrap">
+                      {statusConfig.label}
+                    </span>
+                  </div>
+
+                  {/* Arrow Icon */}
+                  <ArrowRight className="h-5 w-5 text-slate-500 group-hover:text-cyan-400 transition-colors flex-shrink-0" />
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 };
 
