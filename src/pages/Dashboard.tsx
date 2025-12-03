@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import Sidebar from "@/components/Sidebar";
-import TopBar from "@/components/TopBar";
+import PageLayout from "@/components/layout/PageLayout";
 import StatisticsCards from "@/components/dashboard/StatisticsCards";
 import RecentPredictions from "@/components/dashboard/RecentPredictions";
 import PatternPerformanceChart from "@/components/dashboard/PatternPerformanceChart";
+import QuickActions from "@/components/dashboard/QuickActions";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Prediction {
@@ -74,7 +74,7 @@ export default function Dashboard() {
         const homeTeamData = matchData?.home_team;
         const awayTeamData = matchData?.away_team;
         const leagueData = matchData?.league;
-        
+
         return {
           id: p.id,
           predicted_outcome: p.predicted_outcome,
@@ -82,10 +82,10 @@ export default function Dashboard() {
           actual_outcome: p.actual_outcome,
           was_correct: p.was_correct,
           match: {
-            home_team: Array.isArray(homeTeamData) ? homeTeamData[0]?.name ?? 'Unknown' : homeTeamData?.name ?? 'Unknown',
-            away_team: Array.isArray(awayTeamData) ? awayTeamData[0]?.name ?? 'Unknown' : awayTeamData?.name ?? 'Unknown',
-            match_date: matchData?.match_date ?? '',
-            league: Array.isArray(leagueData) ? leagueData[0]?.name ?? 'Unknown' : leagueData?.name ?? 'Unknown',
+            home_team: Array.isArray(homeTeamData) ? homeTeamData[0]?.name ?? "Unknown" : homeTeamData?.name ?? "Unknown",
+            away_team: Array.isArray(awayTeamData) ? awayTeamData[0]?.name ?? "Unknown" : awayTeamData?.name ?? "Unknown",
+            match_date: matchData?.match_date ?? "",
+            league: Array.isArray(leagueData) ? leagueData[0]?.name ?? "Unknown" : leagueData?.name ?? "Unknown",
           },
         };
       });
@@ -108,7 +108,7 @@ export default function Dashboard() {
       let currentStreak = 0;
       let maxStreak = 0;
       const sortedPredictions = [...evaluatedPredictions].reverse();
-      
+
       for (const pred of sortedPredictions) {
         if (pred.was_correct) {
           currentStreak++;
@@ -135,7 +135,7 @@ export default function Dashboard() {
       const formattedPatternData: PatternData[] = (patternAccuracy ?? []).map((p) => {
         const templateData = Array.isArray(p.template) ? p.template[0] : p.template;
         return {
-          name: templateData?.name ?? 'Unknown Pattern',
+          name: templateData?.name ?? "Unknown Pattern",
           accuracy: p.accuracy_rate ?? 0,
           total: p.total_predictions ?? 0,
         };
@@ -151,7 +151,6 @@ export default function Dashboard() {
         topPattern,
         winningStreak: maxStreak,
       });
-
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -161,56 +160,44 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black">
-        <Sidebar />
-        <TopBar />
-        <main className="lg:ml-64 pt-16 lg:pt-0">
-          <div className="container mx-auto px-4 py-8">
-            <div className="mb-8">
-              <Skeleton className="h-12 w-64 mb-2" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-32" />
-              ))}
-            </div>
-            <Skeleton className="h-96 mb-8" />
-            <Skeleton className="h-96" />
-          </div>
-        </main>
-      </div>
+      <PageLayout>
+        <div className="mb-8">
+          <Skeleton className="h-12 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <Skeleton className="h-96 mb-8" />
+        <Skeleton className="h-96" />
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <Sidebar />
-      <TopBar />
-      <main className="lg:ml-64 pt-16 lg:pt-0">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gradient-emerald mb-2">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground">
-              Kövesd nyomon a predikciók pontosságát és teljesítményét
-            </p>
-          </div>
+    <PageLayout>
+      <div className="mb-8 animate-slide-up">
+        <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
+        <p className="text-slate-400">
+          Kövesd nyomon a predikciók pontosságát és teljesítményét
+        </p>
+      </div>
 
-          <StatisticsCards
-            totalPredictions={stats.totalPredictions}
-            accuracy={stats.accuracy}
-            topPattern={stats.topPattern}
-            winningStreak={stats.winningStreak}
-          />
+      <StatisticsCards
+        totalPredictions={stats.totalPredictions}
+        accuracy={stats.accuracy}
+        topPattern={stats.topPattern}
+        winningStreak={stats.winningStreak}
+      />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <RecentPredictions predictions={predictions} />
-            <PatternPerformanceChart data={patternData} />
-          </div>
-        </div>
-      </main>
-    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <RecentPredictions predictions={predictions} />
+        <PatternPerformanceChart data={patternData} />
+      </div>
+
+      <QuickActions />
+    </PageLayout>
   );
 }
